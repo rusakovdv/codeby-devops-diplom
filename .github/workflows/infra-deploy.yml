@@ -31,6 +31,7 @@ jobs:
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_wrapper: false
+    
 
       - name: Configure Terraform provider mirror
         run: |
@@ -47,6 +48,39 @@ jobs:
             EOF
 
             echo "TF_CLI_CONFIG_FILE=$RUNNER_TEMP/terraformrc" >> $GITHUB_ENV
+
+      - name: Debug secrets presence
+        env:
+            YC_SA_KEY_JSON: ${{ secrets.YC_SA_KEY_JSON }}
+            YC_CLOUD_ID: ${{ secrets.YC_CLOUD_ID }}
+            YC_FOLDER_ID: ${{ secrets.YC_FOLDER_ID }}
+            ACCESS_KEY: ${{ secrets.YC_S3_ACCESS_KEY_ID }}
+            SECRET_KEY: ${{ secrets.YC_S3_SECRET_ACCESS_KEY }}
+        run: |
+            set -e
+
+            check_var () {
+            VAR_NAME="$1"
+            VAR_VALUE="${!VAR_NAME}"
+
+            if [ -z "$VAR_VALUE" ]; then
+                echo "❌ $VAR_NAME is EMPTY or NOT SET"
+                exit 1
+            else
+                echo "✅ $VAR_NAME is set"
+            fi
+            }
+
+            echo "🔍 Checking required secrets..."
+
+            check_var YC_SA_KEY_JSON
+            check_var YC_CLOUD_ID
+            check_var YC_FOLDER_ID
+            check_var ACCESS_KEY
+            check_var SECRET_KEY
+
+            echo "🎉 All required secrets are present"
+
 
       - name: Configure Yandex Cloud credentials
         env:
