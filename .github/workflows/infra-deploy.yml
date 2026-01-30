@@ -5,11 +5,8 @@ on:
     branches: [ "main" ]
     paths:
       - "infrastructure/terraform/**"
-
-  push:
-    branches: [ "main" ]
-    paths:
       - ".github/workflows/infra-deploy.yml"
+
 
 permissions:
   contents: read
@@ -35,6 +32,22 @@ jobs:
         with:
           terraform_wrapper: false
 
+      - name: Configure Terraform provider mirror
+        run: |
+            cat > $RUNNER_TEMP/terraformrc <<'EOF'
+            provider_installation {
+            network_mirror {
+                url = "https://terraform-mirror.yandexcloud.net/"
+                include = ["registry.terraform.io/*/*"]
+            }
+            direct {
+                exclude = ["registry.terraform.io/*/*"]
+            }
+            }
+            EOF
+
+            echo "TF_CLI_CONFIG_FILE=$RUNNER_TEMP/terraformrc" >> $GITHUB_ENV
+
       - name: Configure Yandex Cloud credentials
         env:
           YC_SA_KEY_JSON: ${{ secrets.YC_SA_KEY_JSON }}
@@ -52,10 +65,7 @@ jobs:
             ACCESS_KEY: ${{ secrets.YC_S3_ACCESS_KEY_ID }}
             SECRET_KEY: ${{ secrets.YC_S3_SECRET_ACCESS_KEY }}
         run: |
-            terraform init -input=false \
-            -backend-config="access_key=${ACCESS_KEY}" \
-            -backend-config="secret_key=${SECRET_KEY}" \
-            -backend-config="region=ru-central1"
+            terraform init -input=false -backend-config="access_key=${ACCESS_KEY}" -backend-config="secret_key=${SECRET_KEY}"
 
 
       - name: Terraform Plan
