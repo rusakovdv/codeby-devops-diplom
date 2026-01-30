@@ -120,15 +120,21 @@ jobs:
       - name: Helm Lint
         run: helm lint ${{ env.HELM_CHART_PATH }}
 
+      - name: Set version
+        id: version
+        run: |
+            VERSION="${GITHUB_REF_NAME}"
+            VERSION="${VERSION#v}"
+            echo "VERSION=$VERSION" >> $GITHUB_ENV
+
       - name: Helm Upgrade
         run: |
-          VERSION="${{github.ref_name}}"
-          echo "🚀 Deploying version $VERSION to namespace ${{ env.K8S_NAMESPACE }}"
-          
-          helm upgrade --install myapp ${{ env.HELM_CHART_PATH }} \
-            --namespace ${{ env.K8S_NAMESPACE }} \
-            --set app.image.repository=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }} \
-            --set app.image.tag=$VERSION \
+            echo "🚀 Deploying version $VERSION to namespace $K8S_NAMESPACE"
+
+            helm upgrade --install myapp "$HELM_CHART_PATH" \
+            --namespace "$K8S_NAMESPACE" \
+            --set app.image.repository="$REGISTRY/$IMAGE_NAME" \
+            --set app.image.tag="$VERSION" \
             --set app.image.pullPolicy=IfNotPresent \
             --wait \
             --atomic \
