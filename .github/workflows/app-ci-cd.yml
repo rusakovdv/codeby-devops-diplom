@@ -10,7 +10,7 @@ on:
     paths:
       - "app/**"
       - "helm/**"
-      - ".github/workflows/main.yml"
+      - ".github/workflows/app-ci-cd.yml"
     
   push:
     branches:
