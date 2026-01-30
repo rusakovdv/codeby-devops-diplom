@@ -80,3 +80,8 @@ resource "yandex_vpc_security_group_rule" "allow_http" {
   protocol               = "TCP"
 }
 
+resource "null_resource" "ci_cd_test" {
+  triggers = {
+    run_id = timestamp()
+  }
+}
