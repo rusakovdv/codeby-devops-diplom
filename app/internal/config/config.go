@@ -25,8 +25,6 @@ func Load() *Config {
 	}
 }
 
-// getEnv — вспомогательная функция: читает ENV переменную,
-// если её нет — возвращает default value (def)
 func getEnv(key, def string) string {
 	if v := os.Getenv(key); v != "" {
 		return v
