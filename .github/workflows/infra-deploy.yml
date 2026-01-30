@@ -5,6 +5,10 @@ on:
     branches: [ "main" ]
     paths:
       - "infrastructure/terraform/**"
+
+  push:
+    branches: [ "main" ]
+    paths:
       - ".github/workflows/infra-deploy.yml"
 
 permissions:
