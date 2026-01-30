@@ -80,6 +80,7 @@ jobs:
             check_var SECRET_KEY
 
             echo "🎉 All required secrets are present"
+            echo "🎉 All required secrets are present"
 
 
       - name: Configure Yandex Cloud credentials
