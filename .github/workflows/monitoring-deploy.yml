@@ -1,0 +1,144 @@
+name: Deploy Monitoring Stack
+
+on:
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - "monitoring/**"
+      - ".github/workflows/monitoring-deploy.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  # -------------------------------------------------
+  # 1. Detect changes
+  # -------------------------------------------------
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      prometheus: ${{ steps.filter.outputs.prometheus }}
+      loki: ${{ steps.filter.outputs.loki }}
+      promtail: ${{ steps.filter.outputs.promtail }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            prometheus:
+              - 'monitoring/prometheus/**'
+            loki:
+              - 'monitoring/loki/**'
+            promtail:
+              - 'monitoring/promtail/**'
+
+  # -------------------------------------------------
+  # 2. Deploy Prometheus (manual approve)
+  # -------------------------------------------------
+  prometheus:
+    name: Deploy kube-prometheus-stack
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.prometheus == 'true'
+    environment: prod
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/setup-helm@v4
+
+      - name: Add Helm Repos
+        run: |
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo update
+
+      - name: Restore kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG_B64 }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - run: |
+          helm upgrade --install prometheus \
+            prometheus-community/kube-prometheus-stack \
+            --namespace monitoring \
+            --create-namespace \
+            -f monitoring/prometheus/values.yaml \
+            --wait \
+            --atomic \
+            --timeout 10m
+
+  # -------------------------------------------------
+  # 3. Deploy Loki
+  # -------------------------------------------------
+  loki:
+    name: Deploy Loki
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: |
+      needs.detect-changes.outputs.loki == 'true'
+    environment: prod
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+
+      - name: Add Helm Repos
+        run: |
+          helm repo add grafana https://grafana.github.io/helm-charts
+          helm repo update
+
+      - name: Restore kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG_B64 }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - run: |
+          helm upgrade --install loki \
+            grafana/loki \
+            --namespace monitoring \
+            -f monitoring/loki/values.yaml \
+            --wait \
+            --atomic \
+            --timeout 10m
+
+  # -------------------------------------------------
+  # 4. Deploy Promtail
+  # -------------------------------------------------
+  promtail:
+    name: Deploy Promtail
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: |
+      needs.detect-changes.outputs.promtail == 'true' ||
+      needs.detect-changes.outputs.loki == 'true' ||
+      needs.detect-changes.outputs.prometheus == 'true'
+    environment: prod
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+
+      - name: Add Helm Repos
+        run: |
+          helm repo add grafana https://grafana.github.io/helm-charts
+          helm repo update
+
+      - name: Restore kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG_B64 }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - run: |
+          helm upgrade --install promtail \
+            grafana/promtail \
+            --namespace monitoring \
+            -f monitoring/promtail/values.yaml \
+            --wait \
+            --atomic \
+            --timeout 10m
