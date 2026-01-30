@@ -78,7 +78,7 @@ func (h *Handler) home(w nethttp.ResponseWriter, r *nethttp.Request) {
 	hostname, _ := os.Hostname()
 
 	fmt.Fprintf(w,
-		"Hello from DevOps Diploma!!!\nHostname: %s\nVersion: %s\nHits: %d\n",
+		"Hello from DevOps Diploma!!!!\nHostname: %s\nVersion: %s\nHits: %d\n",
 		hostname, h.Version, count,
 	)
 }
