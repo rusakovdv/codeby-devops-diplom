@@ -42,15 +42,17 @@ jobs:
           echo "YC_CLOUD_ID=${{ secrets.YC_CLOUD_ID }}" >> $GITHUB_ENV
           echo "YC_FOLDER_ID=${{ secrets.YC_FOLDER_ID }}" >> $GITHUB_ENV
 
-      - name: Configure Object Storage backend
-        run: |
-          echo "AWS_ACCESS_KEY_ID=${{ secrets.YC_S3_ACCESS_KEY_ID }}" >> $GITHUB_ENV
-          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.YC_S3_SECRET_ACCESS_KEY }}" >> $GITHUB_ENV
-          echo "AWS_DEFAULT_REGION=ru-central1" >> $GITHUB_ENV
-          echo "AWS_EC2_METADATA_DISABLED=true" >> $GITHUB_ENV
-
       - name: Terraform Init
-        run: terraform init -input=false
+        working-directory: infrastructure/terraform
+        env:
+            ACCESS_KEY: ${{ secrets.YC_S3_ACCESS_KEY_ID }}
+            SECRET_KEY: ${{ secrets.YC_S3_SECRET_ACCESS_KEY }}
+        run: |
+            terraform init -input=false \
+            -backend-config="access_key=${ACCESS_KEY}" \
+            -backend-config="secret_key=${SECRET_KEY}" \
+            -backend-config="region=ru-central1"
+
 
       - name: Terraform Plan
         id: plan
