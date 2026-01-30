@@ -25,7 +25,7 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  HELM_CHART_PATH: ./helm/myapp
+  HELM_CHART_PATH: ./helm_charts/app
   K8S_NAMESPACE: default
 
 jobs:
