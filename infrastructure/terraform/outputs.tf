@@ -12,3 +12,7 @@ output "k8s_connect_command" {
   description = "Команда для подключения к кластеру"
   value       = "yc managed-kubernetes cluster get-credentials --id ${module.k8s.cluster_id} --external"
 }
+
+output "ci_cd_test_run" {
+  value = null_resource.ci_cd_test.triggers.run_id
+}
